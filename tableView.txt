@@ -1,0 +1,47 @@
+sudo iptables -nvL --line-numbers
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+1     182K   50M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED /* EST skip filter rules */
+2        0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED /* REL skip filter rules */
+3       17  1282 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp flags:!0x17/0x02 state NEW /* Force SYN packets check for new TCP connections */
+4        2    80 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp flags:0x3F/0x00 /* DROP NULL packets/flags */
+5       56  2694 LOGDROP    all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID /* Drop INVALID state connections */
+6        0     0 LOGDROP    all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate UNTRACKED /* Drop UNTRACKED state connections */
+7     1554 92044 IN_CUSTOMRULES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Allowed Ports and Services */
+8      498 39098 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
+9      118  7510 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Explicitly DROP other connections */
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+1     231K  154M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+2     3803  364K ACCEPT     all  --  *      *       10.8.0.0/24          0.0.0.0/0
+
+Chain OUTPUT (policy ACCEPT 611 packets, 38446 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+1     153K  144M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED /* Egress - REL,EST */
+2        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            /* Egress - ICMP counters */
+3      498 39098 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0
+
+Chain IN_CUSTOMRULES (1 references)
+num   pkts bytes target     prot opt in     out     source               destination
+1      111  6528 SAFEZONE   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22 ctstate NEW /* Allow SSH */
+2        0     0 SAFEZONE   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:222 ctstate NEW /* Allow SSH */
+3      280 11224 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 ctstate NEW /* Allow http */
+4      488 24036 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:443 ctstate NEW /* Allow https */
+5      169 10124 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:1194 ctstate NEW /* Allow OpenVPN */
+6      616 46608 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Jump back to main filter rules */
+7        0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Explicit drop rule */paranoid*/ */
+
+Chain LOGDROP (2 references)
+num   pkts bytes target     prot opt in     out     source               destination
+1       56  2694 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            LOG flags 7 level 4 prefix "DROP "
+2       56  2694 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0
+
+Chain SAFEZONE (2 references)
+num   pkts bytes target     prot opt in     out     source               destination
+1        0     0 ACCEPT     all  --  *      *       x.x.x.x         0.0.0.0/0
+2        0     0 ACCEPT     all  --  *      *       x.x.x.x         0.0.0.0/0
+3        1    52 ACCEPT     all  --  *      *       x.x.x.x       0.0.0.0/0
+4        0     0 ACCEPT     all  --  *      *       10.8.0.0/24          0.0.0.0/0
+5      110  6476 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0
