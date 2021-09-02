@@ -11,6 +11,10 @@ Stateful Packet Inspection filters to drop bogus traffic to ensure only legitima
 Opened ports/services
 SAFEZONE for whitelisted IP's (requires changing rules in  IN_CUSTOMRULES chain to be more meaningful)
 
+`
+
+`
+
 NAT table:
 
  NAT connections destined for VPN clients
@@ -24,7 +28,7 @@ one of the INPUT chain rules logs packets before the default drop rule so in ord
 
 ## Process:
 
-Create the following file > /etc/rsyslog.d/iptables.conf
+Create the following file > `/etc/rsyslog.d/iptables.conf`
 and use the following to log dropped packets in a seperate file from the syslog file.
 `
   :msg, contains, "[IPTABLES-BLOCKED]" - /var/log/iptables.log
