@@ -11,8 +11,8 @@ Stateful Packet Inspection filters to drop bogus traffic to ensure only legitima
 Opened ports/services
 SAFEZONE for whitelisted IP's (requires changing rules in  IN_CUSTOMRULES chain to be more meaningful)
 
-`
-Chain INPUT (policy ACCEPT 0 packets, 0 bytes) \n
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes) 
 num   pkts bytes target     prot opt in     out     source               destination
 1     1008 88912 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
 2    75832   54M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED /* EST skip filter rules */
@@ -22,7 +22,7 @@ num   pkts bytes target     prot opt in     out     source               destina
 6       23  1352 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* LOG all dropped traffic */ LOG flags 0 level 4 prefix "[IPTABLES-BLOCKED]: "
 7       23  1352 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Explicitly DROP other connections */
 
-`
+
 
 NAT table:
 
