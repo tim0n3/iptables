@@ -22,6 +22,7 @@ add rule ip filter INPUT ct state established counter accept comment "EST skip f
 add rule ip filter INPUT ct state related counter accept comment "REL skip filter rules"
 add rule ip filter INPUT counter jump IN_DPI_RULES comment "Security Rules"
 add rule ip filter INPUT counter jump IN_CUSTOMRULES comment "Allowed Ports and Services"
+add rule ip filter INPUT counter log prefix "[IPTABLES-BLOCKED]: " comment "LOG all dropped traffic"
 add rule ip filter INPUT counter drop comment "Explicitly DROP other connections"
 add rule ip filter FORWARD ct state related,established counter accept
 add rule ip filter FORWARD ct state invalid counter drop comment "Drop INVALID state connections"
