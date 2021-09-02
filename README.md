@@ -31,4 +31,5 @@ and use the following to log dropped packets in a seperate file from the syslog 
     & ~
     
 then restart syslog process (assuming you're on ubuntu/debian) with the following command (as root):
-### /etc/init.d/rsyslog restart
+` /etc/init.d/rsyslog restart
+`
