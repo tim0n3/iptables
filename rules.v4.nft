@@ -1,4 +1,4 @@
-# Translated by iptables-restore-translate v1.8.4 on Wed Aug 18 11:49:13 2021
+# Translated by iptables-restore-translate v1.8.4 on Thu Sep  2 07:56:49 2021
 add table ip security
 add chain ip security INPUT { type filter hook input priority 0; policy accept; }
 add chain ip security FORWARD { type filter hook forward priority 0; policy accept; }
@@ -14,35 +14,49 @@ add table ip filter
 add chain ip filter INPUT { type filter hook input priority 0; policy accept; }
 add chain ip filter FORWARD { type filter hook forward priority 0; policy accept; }
 add chain ip filter OUTPUT { type filter hook output priority 0; policy accept; }
+add chain ip filter IN_DPI_RULES
 add chain ip filter IN_CUSTOMRULES
-add chain ip filter LOGDROP
 add chain ip filter SAFEZONE
+add rule ip filter INPUT iifname "lo" counter accept
 add rule ip filter INPUT ct state established counter accept comment "EST skip filter rules"
 add rule ip filter INPUT ct state related counter accept comment "REL skip filter rules"
-add rule ip filter INPUT tcp flags & (fin|syn|rst|ack) != syn ct state new  counter drop comment "Force SYN packets check for new TCP connections"
-add rule ip filter INPUT tcp flags & (fin|syn|rst|psh|ack|urg) == 0x0 counter drop comment "DROP NULL packets/flags"
-add rule ip filter INPUT ct state invalid counter jump LOGDROP comment "Drop INVALID state connections"
-add rule ip filter INPUT ct state untracked counter jump LOGDROP comment "Drop UNTRACKED state connections"
+add rule ip filter INPUT counter jump IN_DPI_RULES comment "Security Rules"
 add rule ip filter INPUT counter jump IN_CUSTOMRULES comment "Allowed Ports and Services"
-add rule ip filter INPUT iifname "lo" counter accept
 add rule ip filter INPUT counter drop comment "Explicitly DROP other connections"
 add rule ip filter FORWARD ct state related,established counter accept
+add rule ip filter FORWARD ct state invalid counter drop comment "Drop INVALID state connections"
+add rule ip filter FORWARD ct state untracked counter drop comment "Drop UNTRACKED state connections"
 add rule ip filter FORWARD ip saddr 10.8.0.0/24 counter accept
-add rule ip filter OUTPUT ct state related,established counter accept comment "Egress - REL,EST"
-add rule ip filter OUTPUT ip protocol icmp counter accept comment "Egress - ICMP counters"
 add rule ip filter OUTPUT oifname "lo" counter accept
+add rule ip filter OUTPUT ct state related,established counter accept comment "REL,EST skip filter rules"
+add rule ip filter OUTPUT ct state new counter accept comment "Egress - NEW counters"
+add rule ip filter IN_DPI_RULES tcp flags & (fin|syn|rst|ack) != syn ct state new counter drop comment "All TCP sessions should begin with SYN"
+add rule ip filter IN_DPI_RULES tcp flags & (fin|syn|rst|ack) != syn ct state new counter drop comment "syn flood"
+add rule ip filter IN_DPI_RULES tcp flags & (fin|syn|rst|psh|ack|urg) == 0x0 counter drop comment "DROP NULL packets/flags"
+add rule ip filter IN_DPI_RULES tcp flags & (fin|syn|rst|psh|ack|urg) == fin|syn|rst|psh|ack|urg counter drop comment "DROP bogus TCP Flags"
+add rule ip filter IN_DPI_RULES tcp flags & (fin|syn|rst|psh|ack|urg) == fin|syn|rst|psh|ack|urg counter drop comment "DROP xmas packets"
+add rule ip filter IN_DPI_RULES tcp flags & (rst) == rst limit rate 2/second burst 2 packets counter accept comment "DROP EXCESSIVE TCP RST PACKETS"
+add rule ip filter IN_DPI_RULES ct state invalid counter drop comment "Drop INVALID state connections"
+add rule ip filter IN_DPI_RULES ct state untracked counter drop comment "Drop UNTRACKED state connections"
+add rule ip filter IN_DPI_RULES counter return comment "Jump back to main filter rules"
 add rule ip filter IN_CUSTOMRULES tcp dport 22 ct state new counter jump SAFEZONE comment "Allow SSH"
 add rule ip filter IN_CUSTOMRULES tcp dport 222 ct state new counter jump SAFEZONE comment "Allow SSH"
+add rule ip filter IN_CUSTOMRULES udp dport 67 ct state new counter accept comment "Allow dhcp"
+add rule ip filter IN_CUSTOMRULES tcp dport 80 ct state new counter accept comment "Allow http"
 add rule ip filter IN_CUSTOMRULES tcp dport 80 ct state new counter accept comment "Allow http"
 add rule ip filter IN_CUSTOMRULES tcp dport 443 ct state new counter accept comment "Allow https"
+add rule ip filter IN_CUSTOMRULES udp dport 443 ct state new counter accept comment "Allow quic"
 add rule ip filter IN_CUSTOMRULES tcp dport 1194 ct state new counter accept comment "Allow OpenVPN"
+add rule ip filter IN_CUSTOMRULES udp dport 123 ct state new counter accept comment "Allow NTP"
+add rule ip filter IN_CUSTOMRULES udp dport 1194 ct state new counter accept comment "Allow OpenVPN"
+add rule ip filter IN_CUSTOMRULES icmp type echo-request counter accept comment "ICMP ping"
+add rule ip filter IN_CUSTOMRULES icmp type time-exceeded counter accept comment "ICMP traceroute"
 add rule ip filter IN_CUSTOMRULES counter return comment "Jump back to main filter rules"
 add rule ip filter IN_CUSTOMRULES counter drop comment "Explicit drop rule */paranoid*/"
-add rule ip filter LOGDROP counter log prefix "DROP " flags tcp sequence,options flags ip options
-add rule ip filter LOGDROP counter drop
-add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept
-add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept
-add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept
+add rule ip filter SAFEZONE ip saddr x.x.x.x/x counter accept comment "allow-ingress-from-secure-IP"
+add rule ip filter SAFEZONE ip saddr x.x.x.x/x counter accept comment "allow-ingress-from-secure-IP"
+add rule ip filter SAFEZONE ip saddr x.x.x.x/x counter accept comment "allow-ingress-from-hq"
+add rule ip filter SAFEZONE ip saddr 35.235.240.0/20 counter accept comment "allow-ingress-from-google-iap"
 add rule ip filter SAFEZONE ip saddr 10.8.0.0/24 counter accept
 add rule ip filter SAFEZONE counter return
 add table ip mangle
@@ -54,4 +68,4 @@ add chain ip mangle POSTROUTING { type filter hook postrouting priority -150; po
 add table ip raw
 add chain ip raw PREROUTING { type filter hook prerouting priority -300; policy accept; }
 add chain ip raw OUTPUT { type filter hook output priority -300; policy accept; }
-# Completed on Wed Aug 18 11:49:13 2021
+# Completed on Thu Sep  2 07:56:49 2021
