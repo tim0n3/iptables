@@ -37,6 +37,7 @@ COMMIT
 -A INPUT -m conntrack --ctstate RELATED -m comment --comment "REL skip filter rules" -j ACCEPT
 -A INPUT -m comment --comment "Security Rules" -j IN_DPI_RULES
 -A INPUT -m comment --comment "Allowed Ports and Services" -j IN_CUSTOMRULES
+-A INPUT -m comment --comment "LOG all dropped traffic" -j LOG --log-prefix "[IPTABLES-BLOCKED]: "
 -A INPUT -m comment --comment "Explicitly DROP other connections" -j DROP
 #
 #Few FORWARD chain rules purely for counters and stopping bogus traffic
