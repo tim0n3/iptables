@@ -52,9 +52,9 @@ num   pkts bytes target     prot opt in     out     source               destina
 
 Chain SAFEZONE (2 references)
 num   pkts bytes target     prot opt in     out     source               destination
-1        0     0 ACCEPT     all  --  *      *       37.48.118.94         0.0.0.0/0            /* allow-ingress-from-secure-IP */
-2        0     0 ACCEPT     all  --  *      *       188.34.190.74        0.0.0.0/0            /* allow-ingress-from-secure-IP */
-3        0     0 ACCEPT     all  --  *      *       105.23.225.106       0.0.0.0/0            /* allow-ingress-from-hq */
-4        0     0 ACCEPT     all  --  *      *       35.235.240.0/20      0.0.0.0/0            /* allow-ingress-from-google-iap */
+1        0     0 ACCEPT     all  --  *      *       x.x.x.x         0.0.0.0/0            /* allow-ingress-from-secure-IP */
+2        0     0 ACCEPT     all  --  *      *       x.x.x.x        0.0.0.0/0            /* allow-ingress-from-secure-IP */
+3        0     0 ACCEPT     all  --  *      *       x.x.x.x       0.0.0.0/0            /* allow-ingress-from-hq */
+4        0     0 ACCEPT     all  --  *      *       x.x.x.x      0.0.0.0/0            /* allow-ingress-from-google-iap */
 5        0     0 ACCEPT     all  --  *      *       10.8.0.0/24          0.0.0.0/0
 6        0     0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0
