@@ -12,7 +12,7 @@ Opened ports/services
 SAFEZONE for whitelisted IP's (requires changing rules in  IN_CUSTOMRULES chain to be more meaningful)
 
 `
-Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes) \n
 num   pkts bytes target     prot opt in     out     source               destination
 1     1008 88912 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
 2    75832   54M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED /* EST skip filter rules */
