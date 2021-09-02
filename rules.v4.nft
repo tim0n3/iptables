@@ -1,4 +1,4 @@
-# Translated by iptables-restore-translate v1.8.4 on Thu Sep  2 07:56:49 2021
+# Translated by iptables-restore-translate v1.8.4 on Thu Sep  2 13:52:42 2021
 add table ip security
 add chain ip security INPUT { type filter hook input priority 0; policy accept; }
 add chain ip security FORWARD { type filter hook forward priority 0; policy accept; }
@@ -8,8 +8,8 @@ add chain ip nat PREROUTING { type nat hook prerouting priority -100; policy acc
 add chain ip nat INPUT { type nat hook input priority 100; policy accept; }
 add chain ip nat OUTPUT { type nat hook output priority -100; policy accept; }
 add chain ip nat POSTROUTING { type nat hook postrouting priority 100; policy accept; }
-add rule ip nat PREROUTING tcp dport 222 counter dnat to 10.164.0.2:22
-add rule ip nat POSTROUTING ip saddr 10.8.0.0/24 counter snat to 10.164.0.2
+add rule ip nat PREROUTING tcp dport 222 counter dnat to 10.156.15.236:22
+add rule ip nat POSTROUTING ip saddr 10.8.0.0/24 counter snat to 10.156.15.236
 add table ip filter
 add chain ip filter INPUT { type filter hook input priority 0; policy accept; }
 add chain ip filter FORWARD { type filter hook forward priority 0; policy accept; }
@@ -53,9 +53,10 @@ add rule ip filter IN_CUSTOMRULES icmp type echo-request counter accept comment 
 add rule ip filter IN_CUSTOMRULES icmp type time-exceeded counter accept comment "ICMP traceroute"
 add rule ip filter IN_CUSTOMRULES counter return comment "Jump back to main filter rules"
 add rule ip filter IN_CUSTOMRULES counter drop comment "Explicit drop rule */paranoid*/"
-add rule ip filter SAFEZONE ip saddr x.x.x.x/x counter accept comment "allow-ingress-from-secure-IP"
-add rule ip filter SAFEZONE ip saddr x.x.x.x/x counter accept comment "allow-ingress-from-secure-IP"
-add rule ip filter SAFEZONE ip saddr x.x.x.x/x counter accept comment "allow-ingress-from-hq"
+add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept comment "allow-ingress-from-TIM-secure-IP"
+add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept comment "allow-ingress-from-TIM-secure-IP"
+add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept comment "allow-ingress-from-dustin-epicdev"
+add rule ip filter SAFEZONE ip saddr x.x.x.x counter accept comment "allow-ingress-from-eds-hq"
 add rule ip filter SAFEZONE ip saddr 35.235.240.0/20 counter accept comment "allow-ingress-from-google-iap"
 add rule ip filter SAFEZONE ip saddr 10.8.0.0/24 counter accept
 add rule ip filter SAFEZONE counter return
@@ -68,4 +69,4 @@ add chain ip mangle POSTROUTING { type filter hook postrouting priority -150; po
 add table ip raw
 add chain ip raw PREROUTING { type filter hook prerouting priority -300; policy accept; }
 add chain ip raw OUTPUT { type filter hook output priority -300; policy accept; }
-# Completed on Thu Sep  2 07:56:49 2021
+# Completed on Thu Sep  2 13:52:42 2021
