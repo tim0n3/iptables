@@ -11,6 +11,9 @@ COMMIT
 :INPUT ACCEPT [4:240]
 :OUTPUT ACCEPT [15:1170]
 :POSTROUTING ACCEPT [15:1170]
+#
+#NAT Rules for VPN traffic
+#
 -A PREROUTING -p tcp -m tcp --dport 222 -j DNAT --to-destination 10.164.0.2:22
 -A POSTROUTING -s 10.8.0.0/24 -j SNAT --to-source 10.164.0.2
 COMMIT
@@ -22,28 +25,36 @@ COMMIT
 :OUTPUT ACCEPT [8:617]
 :IN_DPI_RULES - [0:0]
 :IN_CUSTOMRULES - [0:0]
-:LOGDROP - [0:0]
 :SAFEZONE - [0:0]
-:OUT_DPI_RULES - [0:0]
-:OUT_CUSTOMRULES - [0:0]
+#
+#Little INPUT chain that quickly determines the behaviour of our firewall (can be deduced by inspection)
+#Quickly allow inbound traffic from lo iface, established and related connections
+#Packet filter rules to sift out bogus traffic
+#Followed by legit traffic on specific ports
+#
 -A INPUT -i lo -j ACCEPT
 -A INPUT -m conntrack --ctstate ESTABLISHED -m comment --comment "EST skip filter rules" -j ACCEPT
 -A INPUT -m conntrack --ctstate RELATED -m comment --comment "REL skip filter rules" -j ACCEPT
 -A INPUT -m comment --comment "Security Rules" -j IN_DPI_RULES
 -A INPUT -m comment --comment "Allowed Ports and Services" -j IN_CUSTOMRULES
 -A INPUT -m comment --comment "Explicitly DROP other connections" -j DROP
+#
+#Few FORWARD chain rules purely for counters and stopping bogus traffic
+#
 -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A FORWARD -m state --state INVALID -m comment --comment "Drop INVALID state connections" -j DROP
--A FORWARD -m state --state UNTRACKED -m comment --comment "Drop UNTRACKED state connections" -j DROP
+-A FORWARD -m conntrack --ctstate INVALID -m comment --comment "Drop INVALID state connections" -j DROP
+-A FORWARD -m conntrack --ctstate UNTRACKED -m comment --comment "Drop UNTRACKED state connections" -j DROP
 -A FORWARD -s 10.8.0.0/24 -j ACCEPT
--A FORWARD -j REJECT reject-with icmp-host-prohibited
+#
+#Few OUTPUT chain rules for counters
+#
 -A OUTPUT -o lo -j ACCEPT
--A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "Egress - REL,EST" -j ACCEPT
--A OUTPUT -m comment --comment "Security Rules" -j OUT_DPI_RULES
--A OUTPUT -m comment --comment "Allowed Ports and Services" -j OUT_CUSTOMRULES
--A OUTPUT -m comment --comment "Explicitly DROP other connections" -j DROP
--A IN_DPI_RULES -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "All TCP sessions should begin with SYN" -j REJECT –reject-with tcp-reset
--A IN_DPI_RULES -f -m comment --comment "DROP Fragments" -j DROP
+-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "REL,EST skip filter rules" -j ACCEPT
+-A OUTPUT -m conntrack --ctstate NEW -m comment --comment "Egress - NEW counters" -j ACCEPT
+#
+#Boilerplate rules to ensure only legit traffic reaches the server and bogus traffic is silently discarded
+#
+-A IN_DPI_RULES -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "All TCP sessions should begin with SYN" -j DROP
 -A IN_DPI_RULES -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment "syn flood" -j DROP
 -A IN_DPI_RULES -p tcp -m tcp --tcp-flags ALL NONE -m comment --comment "DROP NULL packets/flags" -j DROP
 -A IN_DPI_RULES -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG  -m comment --comment "DROP bogus TCP Flags" -j DROP
@@ -52,29 +63,35 @@ COMMIT
 -A IN_DPI_RULES -m conntrack --ctstate INVALID -m comment --comment "Drop INVALID state connections" -j DROP
 -A IN_DPI_RULES -m conntrack --ctstate UNTRACKED -m comment --comment "Drop UNTRACKED state connections" -j DROP
 -A IN_DPI_RULES -m comment --comment "Jump back to main filter rules" -j RETURN
--A IN_CUSTOMRULES -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m comment --comment "Allow SSH" -j SAFEZONE
--A IN_CUSTOMRULES -p tcp -m tcp --dport 222 -m conntrack --ctstate NEW -m comment --comment "Allow SSH" -j SAFEZONE
--A IN_CUSTOMRULES -p tcp -m tcp --dport 80 -m conntrack --ctstate NEW -m comment --comment "Allow http" -j ACCEPT
--A IN_CUSTOMRULES -p tcp -m tcp --dport 443 -m conntrack --ctstate NEW -m comment --comment "Allow https" -j ACCEPT
--A IN_CUSTOMRULES -p tcp -m tcp --dport 1194 -m conntrack --ctstate NEW -m comment --comment "Allow OpenVPN" -j ACCEPT
+#
+#This chain is where you open your tcp/udp ports and will be 1 of only 2 places that users' should modify
+#Since we're already allowing related and established traffic all that's left is to allow new connections to specific ports.
+#If you wan't to restrict port access to a specific IP/ip-range then I'd suggest following the SSH example which jumps to the safezone list of IP's/IP-ranges
+#
+-A IN_CUSTOMRULES -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow SSH" -j SAFEZONE
+-A IN_CUSTOMRULES -p tcp -m tcp --dport 222 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow SSH" -j SAFEZONE
+-A IN_CUSTOMRULES -p udp -m udp --dport 67 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow dhcp" -j ACCEPT
+-A IN_CUSTOMRULES -p tcp -m tcp --dport 80 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow http" -j ACCEPT
+-A IN_CUSTOMRULES -p tcp -m tcp --dport 80 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow http" -j ACCEPT
+-A IN_CUSTOMRULES -p tcp -m tcp --dport 443 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow https" -j ACCEPT
+-A IN_CUSTOMRULES -p udp -m udp --dport 443 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow quic" -j ACCEPT
+-A IN_CUSTOMRULES -p tcp -m tcp --dport 1194 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow OpenVPN" -j ACCEPT
+-A IN_CUSTOMRULES -p udp -m udp --dport 123 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow NTP" -j ACCEPT
+-A IN_CUSTOMRULES -p udp -m udp --dport 1194 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow OpenVPN" -j ACCEPT
+-A IN_CUSTOMRULES -p ICMP --icmp-type 8 -s 0.0.0.0/0 -m comment --comment "ICMP ping" -j ACCEPT
+-A IN_CUSTOMRULES -p ICMP --icmp-type 11 -s 0.0.0.0/0 -m comment --comment "ICMP traceroute" -j ACCEPT
 -A IN_CUSTOMRULES -m comment --comment "Jump back to main filter rules" -j RETURN
 -A IN_CUSTOMRULES -m comment --comment "Explicit drop rule */paranoid*/" -j DROP
+#
+#SAFEZONE or permitted IP/IP-ranges in a dedicated chain for neatness and readibility, Since iptables doesn't have the ability (as far as i'm aware) to have iplists by default. 
+#
 -A SAFEZONE -s x.x.x.x/32 -m comment --comment "Allow HomeIP" -j ACCEPT
 -A SAFEZONE -s x.x.x.x/32 -m comment --comment "Allow OfficeIP" -j ACCEPT
 -A SAFEZONE -s x.x.x.x/32 -m comment --comment "Allow FaithfulFriendIP" -j ACCEPT
 -A SAFEZONE -s 10.8.0.0/24 -m comment --comment "Allow tunnel SSH connections" -j ACCEPT
 -A SAFEZONE -j RETURN
--A OUT_DPI_RULES -m conntrack --ctstate INVALID -m comment --comment "Drop INVALID state connections" -j REJECT icmp-host-prohibited
--A OUT_DPI_RULES -m conntrack --ctstate UNTRACKED -m comment --comment "Drop INVALID state connections" -j REJECT icmp-host-prohibited
--A OUT_DPI_RULES -p icmp -m comment --comment "Egress - ICMP counters" -j ACCEPT
--A OUT_DPI_RULES -m comment --comment "Jump back to main filter rules" -j RETURN
--A OUT_CUSTOMRULES -p udp --dport 53 -m conntrack --ctstate NEW -m comment --comment "DNS queries from localhost" -j ACCEPT
--A OUT_CUSTOMRULES -p udp --dport 22 -m conntrack --ctstate NEW -m comment --comment "SSH" -j ACCEPT
--A OUT_CUSTOMRULES -p udp --dport 222 -m conntrack --ctstate NEW -m comment --comment "SSH" -j ACCEPT
--A OUT_CUSTOMRULES -p udp --dport 80 -m conntrack --ctstate NEW -m comment --comment "http" -j ACCEPT
--A OUT_CUSTOMRULES -p udp --dport 443 -m conntrack --ctstate NEW -m comment --comment "https" -j ACCEPT
--A OUT_CUSTOMRULES -p udp --dport 1194 -m conntrack --ctstate NEW -m comment --comment "OpenVPN" -j ACCEPT
--A OUT_CUSTOMRULES -m comment --comment "Jump back to main filter rules" -j RETURN
+#
+#
 COMMIT
 # Completed on Wed Aug 18 11:30:41 2021
 # Generated by iptables-save v1.8.4 on Wed Aug 18 11:30:41 2021
