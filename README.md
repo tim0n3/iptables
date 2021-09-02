@@ -12,6 +12,15 @@ Opened ports/services
 SAFEZONE for whitelisted IP's (requires changing rules in  IN_CUSTOMRULES chain to be more meaningful)
 
 `
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+1     1008 88912 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
+2    75832   54M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED /* EST skip filter rules */
+3        0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED /* REL skip filter rules */
+4       23  1352 IN_DPI_RULES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Security Rules */
+5       23  1352 IN_CUSTOMRULES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Allowed Ports and Services */
+6       23  1352 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* LOG all dropped traffic */ LOG flags 0 level 4 prefix "[IPTABLES-BLOCKED]: "
+7       23  1352 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Explicitly DROP other connections */
 
 `
 
