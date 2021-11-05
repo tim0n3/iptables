@@ -86,16 +86,11 @@ echo "Populating DPI, Allowed ports and Safe IPs"
 #Since we're already allowing related and established traffic all that's left is to allow new connections to specific ports.
 #If you wan't to restrict port access to a specific IP/ip-range then I'd suggest following the SSH example which jumps to the safezone list of IP's/IP-ranges
 #
- iptables -A IN_CUSTOMRULES -p ICMP --icmp-type echo-reply -s 0.0.0.0/0 -m comment --comment "ICMP ping" -j ACCEPT
- iptables -A IN_CUSTOMRULES -p ICMP --icmp-type 8 -s 0.0.0.0/0 -m comment --comment "ICMP traceroute" -j ACCEPT
- iptables -A IN_CUSTOMRULES -p ICMP --icmp-type 11 -s 0.0.0.0/0 -m comment --comment "ICMP traceroute" -j ACCEPT
+ iptables -A IN_CUSTOMRULES -p ICMP --icmp-type echo-reply -s 0.0.0.0/0 -m comment --comment "ICMP ping replies to our pings" -j ACCEPT
+ iptables -A IN_CUSTOMRULES -p ICMP --icmp-type echo-request -s 0.0.0.0/0 -m comment --comment "ICMP ping this device" -j ACCEPT
+ iptables -A IN_CUSTOMRULES -p ICMP --icmp-type 11 -s 0.0.0.0/0 -m comment --comment "ICMP exceeded" -j ACCEPT
  iptables -A IN_CUSTOMRULES -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow SSH" -j SAFEZONE
- #iptables -A IN_CUSTOMRULES -p udp -m udp --dport 53 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow DNS to Pi-Hole" -j ACCEPT
- iptables -A IN_CUSTOMRULES -p udp -m udp --dport 67 --sport 68 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow dhcp" -j ACCEPT
- #iptables -A IN_CUSTOMRULES -p tcp -m tcp --dport 80 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow http" -j ACCEPT
- #iptables -A IN_CUSTOMRULES -p tcp -m tcp --dport 443 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow https" -j ACCEPT
- #iptables -A IN_CUSTOMRULES -p udp -m udp --dport 123 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow NTP" -j ACCEPT
- #iptables -A IN_CUSTOMRULES -p udp -m udp --dport 1194 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow OpenVPN" -j ACCEPT
+ #iptables -A IN_CUSTOMRULES -p udp -m udp --dport 67 --sport 68 -m conntrack --ctstate NEW -i 0.0.0.0/0 -m comment --comment "Allow dhcp" -j ACCEPT
  iptables -A IN_CUSTOMRULES -m comment --comment "Jump back to main filter rules" -j RETURN
  iptables -A IN_CUSTOMRULES -m comment --comment "Explicit drop rule */paranoid*/" -j DROP
 #
@@ -104,7 +99,7 @@ echo "Populating DPI, Allowed ports and Safe IPs"
  #iptables -A FORWARDING_IN_CUSTOMRULES -p ICMP --icmp-type 8 -s 0.0.0.0/0 -m comment --comment "ICMP traceroute" -j ACCEPT
  #iptables -A FORWARDING_IN_CUSTOMRULES -p ICMP --icmp-type 11 -s 0.0.0.0/0 -m comment --comment "ICMP traceroute" -j ACCEPT
  #iptables -A FORWARDING_IN_CUSTOMRULES -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow SSH" -j SAFEZONE
- #iptables -A FORWARDING_IN_CUSTOMRULES -p udp -m udp --dport 53 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow DNS to Pi-Hole" -j ACCEPT
+ #iptables -A FORWARDING_IN_CUSTOMRULES -p udp -m udp --dport 53 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow DNS to LAN" -j ACCEPT
  #iptables -A FORWARDING_IN_CUSTOMRULES -p udp -m udp --dport 67 --sport 68 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow dhcp" -j ACCEPT
  #iptables -A FORWARDING_IN_CUSTOMRULES -p tcp -m tcp --dport 80 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow http" -j ACCEPT
  #iptables -A FORWARDING_IN_CUSTOMRULES -p tcp -m tcp --dport 443 -m conntrack --ctstate NEW -s 0.0.0.0/0 -m comment --comment "Allow https" -j ACCEPT
@@ -122,6 +117,9 @@ echo "Populating DPI, Allowed ports and Safe IPs"
  iptables -A SAFEZONE -s 192.168.0.0/16 -j ACCEPT
  iptables -A SAFEZONE -j RETURN
  echo "Done!"
+ echo
+ echo "setting up kernel DDoS params"
+ ### add kernel params when one of the pi's come back online
  
  echo "Firewall DDoS configuration is complete!!!"
  echo ...
