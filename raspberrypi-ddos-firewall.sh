@@ -115,9 +115,9 @@ echo "Populating DPI, Allowed ports and Safe IPs"
 #
 #SAFEZONE or permitted IP/IP-ranges in a dedicated chain for neatness and readibility, Since iptables doesn't have the ability (as far as i'm aware) to have iplists by default. 
 #
- iptables -A SAFEZONE -s 37.48.118.94/32 -m comment --comment "allow-ingress-from-TIM-secure-IP" -j ACCEPT
- iptables -A SAFEZONE -s 188.34.190.74/32 -m comment --comment "allow-ingress-from-TIM-secure-IP" -j ACCEPT
- iptables -A SAFEZONE -s 105.23.225.106/32 -m comment --comment "allow-ingress-from-eds-hq" -j ACCEPT
+ iptables -A SAFEZONE -s x.x.x.x/32 -m comment --comment "allow-ingress-from-xxx-secure-IP" -j ACCEPT
+ iptables -A SAFEZONE -s x.x.x.x/32 -m comment --comment "allow-ingress-from-xxx-secure-IP" -j ACCEPT
+ iptables -A SAFEZONE -s x.x.x.x/32 -m comment --comment "allow-ingress-from-xxx-hq" -j ACCEPT
  iptables -A SAFEZONE -s 10.8.0.0/24 -j ACCEPT
  iptables -A SAFEZONE -s 192.168.0.0/16 -j ACCEPT
  iptables -A SAFEZONE -j RETURN
