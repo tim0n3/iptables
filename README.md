@@ -3,6 +3,14 @@ Firewall rules intended for but not limited to single hosts. (router/firewall)
 
 Function:
 
+Mangle table:
+
+Drop (quick) before conntrack, bogus tcp pkts and portscanners
+
+Raw table: 
+
+Allow (quick) before conntrack, tcp pkts that set syn flag and jump to notrack 
+
 Filter table:
 
 Allow (quick) loopback iface traffic <br>
