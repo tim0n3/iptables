@@ -1,5 +1,59 @@
 #!/bin/bash
 
+# VARIABLES - Change these to match your environment.
+# Location of the binaries
+iptables="/sbin/iptables"
+sysctl="/sbin/sysctl"
+
+# Define Loopback Interface
+lo="lo"
+
+# Define External Network (haven't found a way to pickup dhcp addresses e.g. on an LTE connection)
+#wan="eth0"
+wan="wwan0"
+#wanIP="x.x.x.x"
+wanIP="ip route get 1.2.3.4 | awk '{print $7}'"
+
+# Define External Servers
+EXT_NTP1="clock3.redhat.com"
+EXT_NTP2="ntp.public.otago.ac.nz"
+
+# Define Internal Network
+laniface="eth0"
+lanIP="192.168.0.200"
+lanrange="192.168.0.0/24"
+
+# Define Internal Servers
+#INT_SMTP="192.168.0.20"
+#INT_DNS1="192.168.0.10"
+#INT_DNS2="192.168.0.11"
+
+# Set Kernel Parameters
+$SYSCTL -w net/ipv4/conf/all/accept_redirects="0"
+$SYSCTL -w net/ipv4/conf/all/accept_source_route="0"
+$SYSCTL -w net/ipv4/conf/all/log_martians="1"
+$SYSCTL -w net/ipv4/conf/all/rp_filter="1"
+$SYSCTL -w net/ipv4/icmp_echo_ignore_all="0"
+$SYSCTL -w net/ipv4/icmp_echo_ignore_broadcasts="1"
+$SYSCTL -w net/ipv4/icmp_ignore_bogus_error_responses="0"
+$SYSCTL -w net/ipv4/ip_forward="0"
+$SYSCTL -w net/ipv4/tcp_syncookies="1"
+
+# Flush all Rules
+$IPT -F
+
+#Set Policies
+$IPT -P INPUT DROP
+$IPT -P OUTPUT DROP
+$IPT -P FORWARD DROP
+
+# Delete all User-created Chains
+$IPT -X
+
+# Allow access to the Loopback host
+$IPT -A INPUT -i $LOOPBACK -j ACCEPT
+$IPT -A OUTPUT -o $LOOPBACK -j ACCEPT
+
 
 # DDoS, portscan and malformed packet blocks
 echo "Setting up Basic DDos Protection"
