@@ -82,28 +82,9 @@ iptables -t raw -A PREROUTING -s 10.0.0.0/8 -m comment --comment "BOGONS" -j DRO
 iptables -t raw -A PREROUTING -s 0.0.0.0/8 -m comment --comment "BOGONS" -j DROP
 iptables -t raw -A PREROUTING -s 240.0.0.0/5 -m comment --comment "BOGONS" -j DROP
 iptables -t raw -A PREROUTING -s 127.0.0.0/8 ! -i lo -m comment --comment "Only lo iface can have an addr-range of 127.0.0.x/8" -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,RST FIN,RST -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,ACK FIN -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags ACK,URG URG -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags PSH,ACK PSH -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,PSH,URG -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags ALL NONE -j DROP
-iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL ALL -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/second --limit-burst 2 -j ACCEPT
-iptables -t mangle -A PREROUTING -p tcp -m tcp --tcp-flags RST RST -j DROP
+
 iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j DROP
 iptables -t mangle -A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -j DROP
-iptables -t mangle -A PREROUTING -p tcp -m state --state NEW -m recent --set --name DEFAULT --rsource
-iptables -t mangle -A PREROUTING -p tcp -m state --state NEW -m recent --update --seconds 10 --hitcount 25 --name DEFAULT --rsource -j DROP
-iptables -t mangle -A PREROUTING -p icmp -m limit --limit 2/sec -j ACCEPT
-iptables -t mangle -A PREROUTING -p icmp -j DROP
 echo "mangle/prerouting DDoS Rules added!"
 # SYNPROXY start... Do not track new tcp packets
 echo"Setting up Basic conntrack Protections"
