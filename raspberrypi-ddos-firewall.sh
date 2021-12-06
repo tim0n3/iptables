@@ -97,19 +97,15 @@ echo "Populating PREROUTING, INPUT, FORWARD, OUTPUT and POSTROUTING rules:"
 iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
 iptables -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j DROP
 iptables -t mangle -A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j DROP
-
 iptables -t mangle -A INPUT -m conntrack --ctstate INVALID -j DROP
 iptables -t mangle -A INPUT -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j DROP
 iptables -t mangle -A INPUT -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j DROP
-
 iptables -t mangle -A FORWARD -m conntrack --ctstate INVALID -j DROP
 iptables -t mangle -A FORWARD -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j DROP
 iptables -t mangle -A FORWARD -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j DROP
-
 iptables -t mangle -A OUTPUT -m conntrack --ctstate INVALID -j DROP
 iptables -t mangle -A OUTPUT -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j DROP
 iptables -t mangle -A OUTPUT -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j DROP
-
 iptables -t mangle -A POSTROUTING -m conntrack --ctstate INVALID -j DROP
 iptables -t mangle -A POSTROUTING -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j DROP
 iptables -t mangle -A POSTROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j DROP
@@ -131,15 +127,10 @@ echo "Setting up Basic firewall structure"
 echo ...
 echo "Starting with INPUT..."
 iptables -A INPUT -i lo -m comment --comment "Allow loopback connections" -j ACCEPT
-iptables -A INPUT -m comment --comment "Pkt-checks" -j IN_DPI_RULES
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment "ESTABLISHED, RELATED QUICK ACCEPT" -j ACCEPT
-iptables -A INPUT -m comment --comment "Security Rules" -j IN_DPI_RULES
-iptables -A INPUT -m comment --comment "Allowed Ports and Services" -j IN_CUSTOMRULES
-iptables -A INPUT -m comment --comment "LOG all dropped traffic" -j LOG --log-prefix "[IPTABLES-BLOCKED]: " --log-level 7
-iptables -A INPUT -m comment --comment "Explicitly DROP other connections" -j DROP
-
-iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment "ESTABLISHED,RELATED conns quick accept" -j ACCEPT
+iptables -A INPUT -m comment --comment "Pkt-checks" -j IN_DPI_RULES
 iptables -A INPUT -conntrack --ctstate NEW -s 0/0 -m comment --comment "Allowed Ports and Services for New conns" -j IN_CUSTOMRULES
+iptables -A INPUT -m comment --comment "LOG all dropped traffic" -j LOG --log-prefix "[IPTABLES-BLOCKED]: " --log-level 7
 iptables -A INPUT -m comment --comment "Explicitly DROP other connections" -j DROP
 echo "Done"
 echo ......
