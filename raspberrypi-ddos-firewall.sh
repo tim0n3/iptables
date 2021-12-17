@@ -133,8 +133,8 @@ echo "Starting with INPUT..."
 iptables -A INPUT -i lo -m comment --comment "Allow loopback connections" -j ACCEPT
 iptables -A INPUT -m comment --comment "Pkt-checks" -j IN_DPI_RULES
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment "ESTABLISHED, RELATED QUICK ACCEPT" -j ACCEPT
-iptables -A INPUT -m comment --comment "Security Rules" -j IN_DPI_RULES
-iptables -A INPUT -m comment --comment "Allowed Ports and Services" -j IN_CUSTOMRULES
+iptables -A INPUT -m comment --comment "Pkt-checks" -j IN_DPI_RULES
+iptables -A INPUT -conntrack --ctstate NEW -s 0/0 -m comment --comment "Allowed Ports and Services for New conns" -j IN_CUSTOMRULES
 iptables -A INPUT -m comment --comment "LOG all dropped traffic" -j LOG --log-prefix "[IPTABLES-BLOCKED]: " --log-level 7
 iptables -A INPUT -m comment --comment "Explicitly DROP other connections" -j DROP
 
