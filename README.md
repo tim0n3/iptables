@@ -5,41 +5,30 @@ Function:
 
 Mangle table:
 ```
-Drop (quick) before conntrack, bogus tcp pkts and portscanners
+N/A
 ```
 Raw table: 
 ```
-Allow (quick) before conntrack, tcp pkts that set syn flag and jump to notrack 
+1. Block bogus pkts.
+2. Allow specified protocols
+3. Block all else
 ```
 Filter table:
 ```
 Allow (quick) loopback iface traffic <br>
 Allow (quick) ESTABLISHED and RELATED traffic <br>
-Stateful Packet Inspection filters to drop bogus traffic to ensure only legitimate traffic reaches the host/network. <br>
-Opened ports/services <br>
-SAFEZONE for whitelisted IP's (requires changing rules in  IN_CUSTOMRULES chain to be more meaningful) <br>
+Ports to be open in forward table if using port forwards. <br>
 ```
 
 NAT table:
 ```
- NAT connections destined for VPN clients
+1. SNAT connections destined for WAN
+2. No Open ports defined but dummy port forward rules to use as template. <br>
 ```
 
 # Misc:
 
 Logging functionality:
-
-one of the INPUT chain rules logs packets before the default drop rule so in order to filter out the fluff we'll copy the records to a seperate logfile.
-
-## Process:
-
-Create the following file > `/etc/rsyslog.d/iptables.conf`
-and use the following to log dropped packets in a seperate file from the syslog file.
 ```
-  :msg, contains, "[IPTABLES-BLOCKED]" - /var/log/iptables.log
-    & ~
- ```
- 
-then restart syslog process (assuming you're on ubuntu/debian) with the following command (as root):
-` /etc/init.d/rsyslog restart
-`
+N/A
+```
