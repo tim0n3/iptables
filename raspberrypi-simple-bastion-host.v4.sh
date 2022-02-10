@@ -42,6 +42,7 @@ iptables -A IN_CUSTOMRULES_TCP -p tcp -m tcp --dport 1194  -m comment --comment 
 iptables -A IN_CUSTOMRULES_TCP -m comment --comment "back to  INPUT" -j RETURN
 
 # Part of INPUT rules
+iptables -A IN_CUSTOMRULES_UDP --sport 67 --dport 68 -m comment --comment "Allow dhcp" -j ACCEPT
 iptables -A IN_CUSTOMRULES_UDP --dport 1194 -m comment --comment "accept OpenVPN-UDP" -j ACCEPT
 iptables -A IN_CUSTOMRULES_UDP --dport 51820 -m comment --comment "accept WireGuard-UDP" -j ACCEPT
 iptables -A IN_CUSTOMRULES_UDP -m comment --comment "back to  INPUT" -j RETURN
