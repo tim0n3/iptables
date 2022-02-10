@@ -128,3 +128,5 @@ net/ipv4/tcp_syncookies=0
 # earlier pf firewall, should set this to 0
 net/ipv4/tcp_sack=1
 EOF
+
+sysctl -p
