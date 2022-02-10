@@ -7,6 +7,7 @@ iptables -N IN_CUSTOMRULES_SAFEZONE
 #iptables -N OUT_CUSTOMRULES uncomment if you require a more complicated ruleset for egress traffic
 
 # INPUT - Houstbound pkts from the net
+iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT -p tcp -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment "accept established, related pkts" -j ACCEPT
 iptables -A INPUT -p tcp -m conntrack --ctstate INVALID,UNTRACKED -m comment --comment "reject invalid pkts" -j REJECT --reject-with icmp-protocol-unreachable
 iptables -A INPUT -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j REJECT --reject-with tcp-reset
@@ -30,6 +31,7 @@ iptables -A FORWARD -p udp -j REJECT --reject-with icmp-port-unreachable
 iptables -A FORWARD -j REJECT --reject-with icmp-protocol-unreachable
 
 # OUTPUT - Netbound pkts from the host
+iptables -A OUTPUT -i lo -j ACCEPT
 iptables -A OUTPUT -p tcp -m conntrack -ctstate ESTABLISHED,RELATED -m comment --comment "accept established, related pkts" -j ACCEPT
 iptables -A OUTPUT -p tcp -m conntrack --ctstate INVALID -m comment --comment "reject invalid pkts" -j REJECT --reject-with icmp-protocol-unreachable
 iptables -A OUTPUT -p tcp ! --syn -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don't present the SYN flag" -j REJECT --reject-with tcp-reset
@@ -85,3 +87,44 @@ iptables -t raw -A PREROUTING -m comment --comment "Drop unused protocols" -j DR
 
 netfilter-persistent save
 netfilter-persistent reload
+
+cat << EOF >> /etc/sysctl.conf
+# Turn on Source Address Verification in all interfaces to prevent some
+# spoofing attacks
+net/ipv4/conf/default/rp_filter=1
+net/ipv4/conf/all/rp_filter=1
+
+# Do not accept IP source route packets (we are not a router)
+net/ipv4/conf/default/accept_source_route=0
+net/ipv4/conf/all/accept_source_route=0
+net/ipv6/conf/default/accept_source_route=0
+net/ipv6/conf/all/accept_source_route=0
+
+# Disable ICMP redirects. ICMP redirects are rarely used but can be used in
+# MITM (man-in-the-middle) attacks. Disabling ICMP may disrupt legitimate
+# traffic to those sites.
+net/ipv4/conf/default/accept_redirects=0
+net/ipv4/conf/all/accept_redirects=0
+net/ipv6/conf/default/accept_redirects=0
+net/ipv6/conf/all/accept_redirects=0
+
+# Ignore bogus ICMP errors
+net/ipv4/icmp_echo_ignore_broadcasts=1
+net/ipv4/icmp_ignore_bogus_error_responses=1
+net/ipv4/icmp_echo_ignore_all=0
+
+# Don't log Martian Packets (impossible packets)
+net/ipv4/conf/default/log_martians=0
+net/ipv4/conf/all/log_martians=0
+
+# Change to '1' to enable TCP/IP SYN cookies This disables TCP Window Scaling
+# (http://lkml.org/lkml/2008/2/5/167)
+net/ipv4/tcp_syncookies=0
+
+#net/ipv4/tcp_fin_timeout=30
+#net/ipv4/tcp_keepalive_intvl=1800
+
+# normally allowing tcp_sack is ok, but if going through OpenBSD 3.8 RELEASE or
+# earlier pf firewall, should set this to 0
+net/ipv4/tcp_sack=1
+EOF
