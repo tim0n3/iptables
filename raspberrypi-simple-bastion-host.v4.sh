@@ -64,6 +64,7 @@ iptables -A IN_CUSTOMRULES_SAFEZONE -s x.x.x.x/x -m comment --comment "EDS IP" -
 iptables -A IN_CUSTOMRULES_SAFEZONE -s x.x.x.x/x -m comment --comment "Tim IP" -j ACCEPT
 iptables -A IN_CUSTOMRULES_SAFEZONE -s x.x.x.x/x -m comment --comment "EDS RMM IP" -j ACCEPT
 iptables -A IN_CUSTOMRULES_SAFEZONE -s 192.168.88.0/24 -m comment --comment "LAN CONNECTIONS" -j ACCEPT
+iptables -A IN_CUSTOMRULES_SAFEZONE -m comment --comment "Jump back to Customrules chain" -j RETURN
 
 # RAW - prerouting - Houstbound pkts from the net
 iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m comment --comment "TCP invalid combination of flags attack (7 rules)" -DROP
