@@ -1,0 +1,101 @@
+#!/bin/bash
+
+echo ===  NAT ===
+iptables -P PREROUTING ACCEPT
+iptables -P INPUT ACCEPT
+iptables -P POSTROUTING ACCEPT
+iptables -P OUTPUT ACCEPT
+
+echo ===  MANGLE ===
+iptables -P PREROUTING ACCEPT
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P POSTROUTING ACCEPT
+
+echo ===  FILTER ===
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -N IN_CUSTOMRULES_TCP
+iptables -N IN_CUSTOMRULES_UDP
+iptables -N IN_CUSTOMRULES_ICMP
+iptables -N IN_CUSTOMRULES_SAFEZONE
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment "accept established, related pkts" -j ACCEPT
+iptables -A INPUT -p tcp -m conntrack --ctstate INVALID,UNTRACKED -m comment --comment "reject invalid pkts" -j DROP
+iptables -A INPUT -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don\'t present the SYN flag" -j REJECT --reject-with tcp-reset
+iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j REJECT --reject-with tcp-reset
+iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m comment --comment "Jump to pre-safezone chain" -j IN_CUSTOMRULES_TCP
+iptables -A INPUT -p udp -m conntrack --ctstate NEW -m comment --comment "Jump to pre-safezone chain" -j IN_CUSTOMRULES_UDP
+iptables -A INPUT -p icmp -m conntrack --ctstate NEW -m comment --comment "Jump to pre-safezone chain" -j IN_CUSTOMRULES_ICMP
+iptables -A INPUT -p tcp -m comment --comment "paranoid drop rule" -j LOG --log-prefix "[BLOCKED-TCP-RST]: " --log-level 7
+iptables -A INPUT -p tcp -m comment --comment "paranoid drop rule" -j REJECT --reject-with tcp-reset
+iptables -A INPUT -p udp -m comment --comment "paranoid drop rule" -j LOG --log-prefix "[BLOCKED-UDP-RST]: " --log-level 7
+iptables -A INPUT -p udp -m comment --comment "paranoid drop rule" -j REJECT --reject-with icmp-port-unreachable
+iptables -A INPUT -m comment --comment "paranoid drop rule" -j LOG --log-prefix "[BLOCKED-GLOBAL-RST]: " --log-level 7
+iptables -A INPUT -m comment --comment "paranoid drop rule" -j REJECT --reject-with icmp-proto-unreachable
+iptables -A FORWARD -i lo -j ACCEPT
+iptables -A FORWARD -o lo -j ACCEPT
+iptables -A FORWARD -p tcp -m conntrack --ctstate RELATED,ESTABLISHED,DNAT -m comment --comment "accept established, related pkts" -j ACCEPT
+iptables -A FORWARD -p tcp -m conntrack --ctstate INVALID -m comment --comment "reject invalid pkts" -j DROP
+iptables -A FORWARD -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don\'t present the SYN flag" -j REJECT --reject-with tcp-reset
+iptables -A FORWARD -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j REJECT --reject-with tcp-reset
+iptables -A FORWARD -s 192.168.0.0/16 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A FORWARD -s 10.8.0.0/24 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment "accept established, related pkts" -j ACCEPT
+iptables -A OUTPUT -p tcp -m conntrack --ctstate INVALID -m comment --comment "reject invalid pkts" -j DROP
+iptables -A OUTPUT -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -m comment --comment "DROP new packets that don\'t present the SYN flag" -j REJECT --reject-with tcp-reset
+iptables -A OUTPUT -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -m comment --comment "DROP new pkts that have malformed mss values" -j REJECT --reject-with tcp-reset
+iptables -A OUTPUT -m conntrack --ctstate NEW -m comment --comment "accept new egress pkts" -j ACCEPT
+iptables -A IN_CUSTOMRULES_TCP -p tcp -m tcp --dport 22 -m comment --comment "Allow SSH for safezone IPs" -j IN_CUSTOMRULES_SAFEZONE
+iptables -A IN_CUSTOMRULES_TCP -p tcp -m tcp --dport 1194 -m comment --comment "Allow OpenVPN-TCP" -j ACCEPT
+iptables -A IN_CUSTOMRULES_TCP -m comment --comment "back to  INPUT" -j RETURN
+iptables -A IN_CUSTOMRULES_UDP -p udp -m udp --sport 68 --dport 67 -m comment --comment "Allow dhcp" -j ACCEPT
+iptables -A IN_CUSTOMRULES_UDP -p udp -m udp --dport 1194 -m comment --comment "accept OpenVPN-UDP" -j ACCEPT
+iptables -A IN_CUSTOMRULES_UDP -m comment --comment "back to  INPUT" -j RETURN
+iptables -A IN_CUSTOMRULES_ICMP -p icmp -m icmp --icmp-type 3 -m comment --comment " ICMP_DST_UNREACHABLE" -j ACCEPT
+iptables -A IN_CUSTOMRULES_ICMP -p icmp -m icmp --icmp-type 4 -m comment --comment ICMP_SOURCE_QUENCH -j ACCEPT
+iptables -A IN_CUSTOMRULES_ICMP -p icmp -m icmp --icmp-type 11 -m comment --comment ICMP_TIME_EXCEEDED -j ACCEPT
+iptables -A IN_CUSTOMRULES_ICMP -p icmp -m icmp --icmp-type 12 -m comment --comment ICMP_PARAMETER_PROBLEM -j ACCEPT
+iptables -A IN_CUSTOMRULES_ICMP -p icmp -m icmp --icmp-type 8 -m comment --comment ICMP_ECHO_REQUEST -j ACCEPT
+iptables -A IN_CUSTOMRULES_ICMP -p icmp -m icmp --icmp-type 0 -m comment --comment ICMP_ECHO_REPLY -j ACCEPT
+iptables -A IN_CUSTOMRULES_ICMP -m comment --comment "back to  INPUT" -j RETURN
+iptables -A IN_CUSTOMRULES_ICMP -m comment --comment "paranoid drop rule" -j REJECT --reject-with icmp-proto-unreachable
+iptables -A IN_CUSTOMRULES_SAFEZONE -s 37.48.118.94/32 -m comment --comment allow-ingress-from-TIM-secure-IP -j ACCEPT
+iptables -A IN_CUSTOMRULES_SAFEZONE -s 105.23.225.106/32 -m comment --comment allow-ingress-from-eds-hq -j ACCEPT
+iptables -A IN_CUSTOMRULES_SAFEZONE -s 165.255.239.93/32 -m comment --comment allow-ingress-from-dustin-epicdev -j ACCEPT
+iptables -A IN_CUSTOMRULES_SAFEZONE -s 35.235.240.0/20 -m comment --comment allow-ingress-from-google-iap -j ACCEPT
+iptables -A IN_CUSTOMRULES_SAFEZONE -s 10.8.0.0/24 -j ACCEPT
+iptables -A IN_CUSTOMRULES_SAFEZONE -m comment --comment "back to IN_CUSTOMRULES_TCP" -j RETURN
+
+echo ===  RAW ===
+iptables -t raw -P PREROUTING ACCEPT
+iptables -t raw -P OUTPUT ACCEPT
+iptables -t raw -A PREROUTING -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/sec --limit-burst 2 -m comment --comment "DROP EXCESSIVE TCP RST PACKETS" -j ACCEPT
+iptables -t raw -A PREROUTING -p tcp -m tcp --dport 0 -m comment --comment "TCP Port 0 attack (2 rules)" -j DROP
+iptables -t raw -A PREROUTING -p tcp -m tcp --sport 0 -m comment --comment "TCP Port 0 attack" -j DROP
+iptables -t raw -A PREROUTING -p udp -m udp --dport 0 -m comment --comment "UDP Port 0 attack (2 rules)" -j DROP
+iptables -t raw -A PREROUTING -p udp -m udp --sport 0 -m comment --comment "UDP Port 0 attack" -j DROP
+iptables -t raw -A PREROUTING -s 34.91.119.101/32 -m comment --comment "Accept safezone connections" -j ACCEPT
+iptables -t raw -A PREROUTING -s 37.48.118.94/32 -m comment --comment "Accept safezone connections" -j ACCEPT
+iptables -t raw -A PREROUTING -s 105.23.225.106/32 -m comment --comment "Accept safezone connections" -j ACCEPT
+iptables -t raw -A PREROUTING -p icmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A PREROUTING -p igmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A PREROUTING -p tcp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A PREROUTING -p udp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A PREROUTING -m comment --comment "Drop unused protocols" -j DROP
+iptables -t raw -A OUTPUT -p tcp -m tcp --dport 0 -m comment --comment "TCP Port 0 attack (2 rules)" -j DROP
+iptables -t raw -A OUTPUT -p tcp -m tcp --sport 0 -m comment --comment "TCP Port 0 attack" -j DROP
+iptables -t raw -A OUTPUT -p udp -m udp --dport 0 -m comment --comment "UDP Port 0 attack (2 rules)" -j DROP
+iptables -t raw -A OUTPUT -p udp -m udp --sport 0 -m comment --comment "UDP Port 0 attack" -j DROP
+iptables -t raw -A OUTPUT -s 34.91.119.101/32 -m comment --comment "Accept safezone connections" -j ACCEPT
+iptables -t raw -A OUTPUT -s 37.48.118.94/32 -m comment --comment "Accept safezone connections" -j ACCEPT
+iptables -t raw -A OUTPUT -s 105.23.225.106/32 -m comment --comment "Accept safezone connections" -j ACCEPT
+iptables -t raw -A OUTPUT -p icmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A OUTPUT -p igmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A OUTPUT -p tcp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A OUTPUT -p udp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+iptables -t raw -A OUTPUT -m comment --comment "Drop unused protocols" -j DROP
+echo === done ===
