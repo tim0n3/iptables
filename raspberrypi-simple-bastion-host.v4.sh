@@ -67,18 +67,18 @@ iptables -A IN_CUSTOMRULES_SAFEZONE -s 192.168.88.0/24 -m comment --comment "LAN
 iptables -A IN_CUSTOMRULES_SAFEZONE -m comment --comment "Jump back to Customrules chain" -j RETURN
 
 # RAW - prerouting - Houstbound pkts from the net
-iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m comment --comment "TCP invalid combination of flags attack (7 rules)" -DROP
-iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags ALL ALL -m comment --comment "XMAS port scan" -DROP
-iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags ALL NONE -m comment --comment "NULL port scan" -DROP
+iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m comment --comment "TCP invalid combination of flags attack (7 rules)" -j DROP
+iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags ALL ALL -m comment --comment "XMAS port scan" -j DROP
+iptables -t raw -A PREROUTING -p tcp -m tcp ! --tcp-flags ALL NONE -m comment --comment "NULL port scan" -j DROP
 iptables -t raw -A PREROUTING -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/sec --limit-burst 2 -m comment --comment "DROP EXCESSIVE TCP RST PACKETS" -j ACCEPT
 iptables -t raw -A PREROUTING -p tcp -m tcp --dport 0 -m comment --comment "TCP Port 0 attack (2 rules)" -j DROP
 iptables -t raw -A PREROUTING -p tcp -m tcp --sport 0 -m comment --comment "TCP Port 0 attack" -j DROP
 iptables -t raw -A PREROUTING -p udp -m udp --dport 0 -m comment --comment "UDP Port 0 attack (2 rules)" -j DROP
 iptables -t raw -A PREROUTING -p udp -m udp --sport 0 -m comment --comment "UDP Port 0 attack" -j DROP
 iptables -t raw -A PREROUTING -p icmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
-iptables -t raw -A PREROUTING -p igmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
 iptables -t raw -A PREROUTING -p tcp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
 iptables -t raw -A PREROUTING -p udp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
+#iptables -t raw -A PREROUTING -p igmp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
 #iptables -t raw -A PREROUTING -p l2tp -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
 #iptables -t raw -A PREROUTING -p gre -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
 #iptables -t raw -A PREROUTING -p etherip -m comment --comment "Accept used protocols and drop all others" -j ACCEPT
